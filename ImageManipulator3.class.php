@@ -1,5 +1,14 @@
 <?php namespace ProcessWire;
-
+/**************************************************************************************************************************************************************
+*
+* CHANGELOG:
+*
+*   0.4.2       fix:        isResourceGd() now works with PHP 7.2  -  8.3
+*
+*   0.4.3       fix:        Creation of dynamic properties, deprecated since PHP 8.3
+*
+*
+**************************************************************************************************************************************************************/
 
 
 
@@ -7,7 +16,7 @@ class ImageManipulator3 extends Wire
 {
 
     // must be identical with the module version
-        protected $version = '0.4.1';
+        protected $version = '0.4.3';
 
     // information of source imagefile
 
@@ -88,6 +97,22 @@ class ImageManipulator3 extends Wire
         protected $thumbnailColorizeCustom = array(0, 0, 0);
 
 
+
+
+
+        // formerly dynamically created, but deprecated since PHP >= 8.3.0
+        protected $originalImage = null;
+        protected $configOptions1 = null;
+        protected $configOptions2 = null;
+        protected $iptcRaw = null;
+        protected $dibIsLoaded = null;
+        //protected $x = null;
+        //protected $x = null;
+        //protected $x = null;
+
+
+
+
     // other properties
 
         /**
@@ -106,7 +131,7 @@ class ImageManipulator3 extends Wire
         *
         *  - targetFilename is needed because we don't want to overwrite the original Imagefile
         *       there are two exceptions:
-        *       1) if you have allready created a variation and have passed that to the ImageManipulator02
+        *       1) if you have allready created a variation and have passed that to the ImageManipulator3
         *          than a targetFilename is not needed.
         *          (we check reference '$image->original' to know about that)
         *       2) using the static function fileAutoRotation, because this is mainly implemented
@@ -183,17 +208,17 @@ class ImageManipulator3 extends Wire
 
 
 
-    // Construct & Destruct the ImageManipulator02 for a single image
+    // Construct & Destruct the ImageManipulator3 for a single image
 
         public function __construct($entryItem = null, $options = [], $bypassOperations = false)
         {
 
             // version check module == class
-            $m = wire('modules')->get('PageImageManipulator02')->getModuleInfo();
+            $m = wire('modules')->get('PageimageManipulator3')->getModuleInfo();
             $m = preg_replace('/(\d)(?=\d)/', '$1.', str_pad("{$m['version']}", 3, "0", STR_PAD_LEFT));
             $c = preg_replace('/(\d)(?=\d)/', '$1.', str_pad("{$this->version}", 3, "0", STR_PAD_LEFT));
             if (!version_compare($m, $c, '=')) {
-                throw new WireException("The versions of Module PageImageManipulator02 ($m) and it dependency classfile ImageManipulator02 ($c) are inconsistent!)");
+                throw new WireException("The versions of Module PageimageManipulator3 ($m) and its dependency classfile ImageManipulator3 ($c) are inconsistent!)");
                 return;
             }
 
@@ -344,7 +369,7 @@ class ImageManipulator3 extends Wire
             );
 
             // try to read EXIF-Orientation-Flag
-            $correction = ImageManipulator02::fileGetExifOrientation($this->filename,true);
+            $correction = ImageManipulator3::fileGetExifOrientation($this->filename,true);
             if (is_array($correction)) {
                 $this->image['orientationCorrection'] = $correction;
             }
@@ -498,7 +523,7 @@ class ImageManipulator3 extends Wire
                 // passed an empty array
                 return $this;
             }
-            $check = array('outputFormat'=>ImageManipulator02::getOutputFormat(), 'targetFilename'=>ImageManipulator02::getTargetFilename());
+            $check = array('outputFormat'=>ImageManipulator3::getOutputFormat(), 'targetFilename'=>ImageManipulator3::getTargetFilename());
             foreach($options as $key => $value) {
                 if (!in_array($key, $this->optionNames)) {
                     // TODO 2 -c errorhandling : create ErrorLog-Entry
@@ -648,13 +673,31 @@ class ImageManipulator3 extends Wire
         */
         public static function isResourceGd(&$var)
         {
-            if (is_resource($var) && strtoupper(substr(get_resource_type($var), 0, 2)) == 'GD') {
-                return true;
-            } else if (is_object($var) && $var instanceof GdImage) {
-                return true;
+            // NEEDS DIFFERENT CHECKS, DEPENDING ON WHICH PHP-VERSION CURRENTLY IS PROCESSING
+            if (is_resource($var)) {
+                // for example returns true with PHP > 7.2, 7.3, 7.4, and then supports get_resource_type()
+                $isGD = 'GD' == strtoupper(substr(get_resource_type($var), 0, 2));
+            } else if (is_object($var)) {
+                // for example returns true with PHP > 8.0, 8.1, 8.2, 8.3, and then supports get_class()
+                $isGD = 'GDIMAGE' == strtoupper(get_class($var));
             } else {
-                return false;
+                $isGD = false;
             }
+
+            return $isGD;
+
+            //mvd([
+            //    'php' => phpversion(),
+            //    '$isGD' => $isGD,
+            //    '$var' => $var,
+            //]);
+            //if (is_object($var) && $var instanceof GdImage) {
+            //    return true;
+            //} else if (is_resource($var) && strtoupper(substr(get_resource_type($var), 0, 2)) == 'GD') {
+            //    return true;
+            //} else {
+            //    return false;
+            //}
         }
 
         public function pimSave($outputFormat=null)
@@ -812,7 +855,7 @@ class ImageManipulator3 extends Wire
         public function getPimVariations($forceRefresh = true)
         {
             if ('page' != $this->entryItem) {
-                throw new WireException("This PageImageManipulator02-Instance is not of type pageimage! ({$this->entryItem})");
+                throw new WireException("This PageImageManipulator3-Instance is not of type pageimage! ({$this->entryItem})");
                 return;
             }
             if (!is_null($this->variations) && !$forceRefresh) return $this->variations;
@@ -828,7 +871,7 @@ class ImageManipulator3 extends Wire
         /**
         * at first call, it loads the image into memory, and after that everytime create and provide a working copy
         */
-        private function imLoad($onlyLoad=false)
+        private function imLoad($onlyLoad = false)
         {
             if ($this->bypassOperations) return;
             if (!isset($this->dibIsLoaded) || $this->dibIsLoaded!==true) {
@@ -2149,7 +2192,7 @@ class ImageManipulator3 extends Wire
                 return false;
             }
             // check orientation
-            $cor = ImageManipulator02::fileGetExifOrientation($filename,true);
+            $cor = ImageManipulator3::fileGetExifOrientation($filename,true);
             if (!is_array($cor)) {
                 return false; // could not check, wrong filetype?, no exif-info?
             }
@@ -2165,7 +2208,7 @@ class ImageManipulator3 extends Wire
             $quality = is_int($quality) && $quality>0 && $quality<=100 ? $quality : 100;
 
             // start Manipulator with filename passed over
-            $fim = new ImageManipulator02($filename);
+            $fim = new ImageManipulator3($filename);
             $fim->setQuality($quality);
 
             if (false===$fim->rotate($cor[0])) {
@@ -2186,7 +2229,7 @@ class ImageManipulator3 extends Wire
         public static function fileThumbnailModule(Pageimage $sourcePageimage, $targetPath, $prefix, $cropX, $cropY, $cropW, $cropH, $targetWidth, $targetHeight, $quality=90, $sharpening='soft', $colorize='none')
         {
             $options = array('quality'=>$quality, 'targetFilename'=>$targetPath); //, 'thumbnailCoordsPermanent'=>true);
-            $pim = new ImageManipulator02($sourcePageimage, $options);
+            $pim = new ImageManipulator3($sourcePageimage, $options);
 
             if ($cropW==0 || $cropH==0) {
                 // user has clicked on button Crop&Go, but has not drawn the rectangle with cropping values!!
@@ -2256,7 +2299,7 @@ class ImageManipulator3 extends Wire
         public static function fileThumbnailModuleCoordsRead(Pageimage $sourcePageimage, &$x1, &$y1, &$w, &$h, &$params, $prefix=null)
         {
             $options = array(); //'thumbnailCoordsPermanent'=>true);
-            $pim = new ImageManipulator02($sourcePageimage, $options);
+            $pim = new ImageManipulator3($sourcePageimage, $options);
             if (!$pim->thumbnailCoordsPermanent) {
                 unset($pim);
                 return false;
@@ -2554,8 +2597,7 @@ class ImageManipulator3 extends Wire
 }
 
 
-
-if (!class_exists('hn_SizeCalc'))
+if (!class_exists('hn_SizeCalc') && !class_exists('ProcessWire\hn_SizeCalc'))
 {
 
     /**

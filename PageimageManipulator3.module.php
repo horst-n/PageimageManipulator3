@@ -9,13 +9,13 @@ class PageimageManipulator3 extends WireData implements Module {        // Confi
     {
         return [
             'title'      => 'Pageimage Manipulator 3',
-            'version'    => '0.4.1',
+            'version'    => '0.4.3',
             'summary'    => 'This module provides basic API Imagemanipulations for the naming scheme beginning with PW 2.6+!',
             'author'     => 'horst',
             'href'       => '',
             'singular'   => true,
             'autoload'   => true,
-            'requires'   => 'ProcessWire>=3.0.165'
+            'requires'   => 'ProcessWire>=3.0.165, PHP>=7.2.0'
         ];
     }
 
