@@ -1,0 +1,27 @@
+{
+  "name": " PageimageManipulator3 @ rev-1 ",
+  "version": " 0.4.X",
+  "description": "",
+  "main": "",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/horst-n/PageimageManipulator3"
+  },
+  "keywords": [
+    "Processwire",
+    "Processwire Module",
+    "PHP"
+  ],
+  "author": "Horst Nogajski",
+  "license": "PRIVATE",
+  "bugs": {
+    "url": "https://github.com/horst-n/PageimageManipulator3/issues"
+  },
+  "homepage": "",
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
